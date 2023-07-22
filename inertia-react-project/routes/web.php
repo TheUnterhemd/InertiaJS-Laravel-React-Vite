@@ -16,7 +16,6 @@ use App\Http\Controllers\UploadController;
 */
 
 Route::get('/', function () {
-    return Inertia::render('Anwendung');
+    return Inertia::render('Home');
 });
-
 Route::post('/upload', [UploadController::class, 'upload']);
