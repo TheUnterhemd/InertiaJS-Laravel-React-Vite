@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\Email;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Intervention\Image\Facades\Image;
 
@@ -71,10 +73,17 @@ class UploadController extends Controller
 
                     // Erstelle das neue Bild mit den Schriftzügen
                     $this->createNewImageWithTexts($originalFileName, $decodedJson->bookTitle, $decodedJson->bookAuthor);
+
+                    // Sende die E-Mail mit dem angehängten Bild
+                    $attachmentPath = public_path('uploads/new_' . $originalFileName);
+                    $this->sendEmailWithAttachment($email, $attachmentPath, $decodedJson->bookTitle);
+
+                    // Lösche das temporäre Bild, nachdem die E-Mail versendet wurde
+                    unlink($attachmentPath);
                 }
             }
 
-            return response()->json(['message' => 'Dateien wurden erfolgreich hochgeladen und verarbeitet.']);
+            return response()->json(['message' => 'Dateien wurden erfolgreich hochgeladen, verarbeitet und per E-Mail versendet.']);
         } else {
             return response()->json(['error' => 'Es wurden keine Dateien hochgeladen.'], 400);
         }
@@ -108,22 +117,22 @@ class UploadController extends Controller
         $lowerThirdHeight = $imageHeight * 2 / 3;
 
         // Füge den bookTitle im oberen Drittel hinzu
-$image->text($bookTitle, $imageWidth / 2, $upperThirdHeight - $fontSize / 2, function ($font) use ($fontPath, $textColor, $fontSize) {
-    $font->file($fontPath);
-    $font->size($fontSize);
-    $font->color($textColor);
-    $font->align('center');
-    $font->valign('middle');
-});
+        $image->text($bookTitle, $imageWidth / 2, $upperThirdHeight - $fontSize / 2, function ($font) use ($fontPath, $textColor, $fontSize) {
+            $font->file($fontPath);
+            $font->size($fontSize);
+            $font->color($textColor);
+            $font->align('center');
+            $font->valign('middle');
+        });
 
-// Füge den bookAuthor im unteren Drittel hinzu
-$image->text($bookAuthor, $imageWidth / 2, $lowerThirdHeight - $fontSize / 2, function ($font) use ($fontPath, $textColor, $fontSize) {
-    $font->file($fontPath);
-    $font->size($fontSize);
-    $font->color($textColor);
-    $font->align('center');
-    $font->valign('middle');
-});
+        // Füge den bookAuthor im unteren Drittel hinzu
+        $image->text($bookAuthor, $imageWidth / 2, $lowerThirdHeight - $fontSize / 2, function ($font) use ($fontPath, $textColor, $fontSize) {
+            $font->file($fontPath);
+            $font->size($fontSize);
+            $font->color($textColor);
+            $font->align('center');
+            $font->valign('middle');
+        });
 
         // Speichere das neue Bild mit den Schriftzügen
         $newImagePath = public_path('uploads/new_' . $imageFileName);
@@ -132,20 +141,21 @@ $image->text($bookAuthor, $imageWidth / 2, $lowerThirdHeight - $fontSize / 2, fu
         // Lösche das ursprüngliche hochgeladene Bild
         unlink($imagePath);
     }
-    private function sendEmailWithAttachment($email, $attachmentPath, $bookTitle)
-{
-    $data = [
-        'subject' => 'Your new Book',
-        'body' => [
-            'title' => 'Thank You!',
-            'content' => '<p>We do hope that you like the style and will visit us again.</p>',
-        ],
-    ];
 
-    Mail::send('emails.book_email', $data, function ($message) use ($email, $attachmentPath, $bookTitle) {
-        $message->to($email)
+    private function sendEmailWithAttachment($email, $attachmentPath, $bookTitle)
+    {
+        $data = [
+            'subject' => 'Your new Book',
+            'body' => [
+                'title' => 'Thank You!',
+                'content' => '<p>We do hope that you like the style and will visit us again.</p>',
+            ],
+        ];
+
+        Mail::send('mail.book_email', $data, function ($message) use ($email, $attachmentPath, $bookTitle) {
+            $message->to($email)
                 ->subject('Your new Book')
                 ->attach($attachmentPath, ['as' => $bookTitle . '.jpg', 'mime' => 'image/jpeg']);
-    });
-}
+        });
+    }
 }

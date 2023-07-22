@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ $subject }}</title>
+    <title>mail</title>
 </head>
 <body>
-    <h1>{{ $body['title'] }}</h1>
-    {!! $body['content'] !!}
-    <img src="{{ $message->embed($imagePath) }}" alt="{{ $bookTitle }}" />
+    <!--Mit $maildata könnte man das Ganze noch individualisieren.-->
+    <h1>It worx MFs</h1>
+    <p>here could be your email text and some more Data</p>
 </body>
 </html>
